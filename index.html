@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indian Rainfall Analysis - Probability and Statistics</title>
+  <meta name="description" content="A probability and statistics analysis of 115 years of Indian rainfall data across 36 meteorological subdivisions, 1901-2015." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero" id="heroSection">
+  <div class="hero__bg"></div>
+  <div class="rain-deco" id="rainDeco"></div>
+  <div class="hero__gradient"></div>
+  <div class="hero__content container">
+    <span class="hero__eyebrow">Probability and Statistics · IMD Dataset · 1901-2015</span>
+    <h1>Decoding India's<br><em>Monsoon</em> in Numbers</h1>
+    <p>
+      Rainfall governs agriculture, water policy, and disaster risk for 1.4 billion people.
+      By applying probability theory, Bayes' rule, distribution fitting, and independence testing,
+      we extract rigorous statistical structure from 115 years of IMD meteorological records.
+    </p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;">
+      <a href="analysis.html" class="btn btn--ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Explore Analysis
+      </a>
+      <a href="dataset.html" class="btn" style="background:rgba(255,239,179,0.15);backdrop-filter:blur(8px);border:1.5px solid rgba(255,239,179,0.3);color:var(--butter);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        View Dataset
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM STATEMENT -->
+<section class="section" id="problemSection" style="position:relative;overflow:hidden;background:var(--butter);">
+  <!-- Weather rainfall backdrop image (User provided photo) -->
+  <div style="position:absolute;inset:0;background-image:url('rainfall_bg.jpg');background-size:cover;background-position:center 45%;opacity:0.22;mix-blend-mode:multiply;pointer-events:none;z-index:0;"></div>
+  <div style="position:absolute;inset:0;background:linear-gradient(to right, rgba(255,239,179,0.45) 0%, transparent 55%, rgba(255,239,179,0.2) 100%), linear-gradient(to bottom, rgba(255,239,179,0.35) 0%, transparent 12%, transparent 88%, rgba(255,239,179,0.35) 100%);pointer-events:none;z-index:0;"></div>
+  
+  <!-- Animated weather rain canvas -->
+  <canvas id="problemRainCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+
+  <!-- Meteorological Isobar & Weather Contour SVG Deco -->
+  <svg style="position:absolute;right:-40px;bottom:-40px;width:340px;height:340px;opacity:0.07;pointer-events:none;z-index:0;" viewBox="0 0 200 200" fill="none">
+    <circle cx="100" cy="100" r="95" stroke="#013e37" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <circle cx="100" cy="100" r="75" stroke="#013e37" stroke-width="1.2"/>
+    <circle cx="100" cy="100" r="55" stroke="#013e37" stroke-width="1.2" stroke-dasharray="2 3"/>
+    <circle cx="100" cy="100" r="35" stroke="#013e37" stroke-width="1"/>
+    <circle cx="100" cy="100" r="15" stroke="#013e37" stroke-width="1"/>
+    <path d="M100 0 L100 200 M0 100 L200 100" stroke="#013e37" stroke-width="0.8" stroke-dasharray="3 3"/>
+  </svg>
+
+  <div class="container" style="position:relative;z-index:1;">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(1,62,55,0.08);border:1px solid rgba(1,62,55,0.18);border-radius:100px;padding:5px 14px;margin-bottom:14px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--green);"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="M11 13v6"/><path d="M7 17v4"/><path d="M15 15v4"/></svg>
+      <span style="font-family:var(--font-body);font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);">Meteorological Enquiry · IMD 1901-2015</span>
+    </div>
+    <h2 style="max-width:20ch;margin-bottom:32px;">Why probability theory<br>+ Indian rainfall?</h2>
+    <div class="grid-2" style="align-items:start;gap:36px;">
+      <div>
+        <p style="font-size:1.05rem;margin-bottom:20px;">
+          India's agricultural output, feeding over a billion people, is driven almost entirely
+          by the Southwest Monsoon. Yet annual rainfall is deeply stochastic: it varies by an order
+          of magnitude between arid zones and the eastern hills, and fluctuates sharply year to year.
+        </p>
+        <p style="font-size:1.05rem;margin-bottom:20px;">
+          Classical statistics gives us tools, Bayes' theorem, normal distribution fits, correlation
+          tests, and polynomial trend models, to move beyond intuition and quantify this uncertainty
+          with mathematical precision.
+        </p>
+        <p style="font-size:1.05rem;">
+          This study applies those tools to 115 years of IMD sub-divisional rainfall records to answer:
+          <em>How predictable is India's rain? Are winter and monsoon rainfall independent?
+          Is there a long-term trend?</em>
+        </p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:var(--green);border-radius:var(--radius);padding:24px 26px;color:var(--butter);transition:transform var(--transition),box-shadow var(--transition);box-shadow:var(--shadow-sm);" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform='none'">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-family:var(--font-body);font-size:0.65rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;opacity:0.6;">Research Question 1</div>
+            <!-- Cloud Rain Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;color:var(--butter);opacity:0.8;"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>
+          </div>
+          <div style="font-family:var(--font-display);font-size:1.15rem;font-weight:900;line-height:1.25;margin-bottom:10px;">Is monsoon rainfall a reliable predictor of annual totals?</div>
+          <p style="font-size:0.88rem;color:rgba(255,239,179,0.75);max-width:none;margin:0;">Bayes' theorem gives P(high annual | high monsoon) = <strong style="color:var(--butter);">0.910</strong>, versus a 25% baseline. Jun-Sep supplies about 75% of pooled annual rainfall.</p>
+        </div>
+        <div style="background:var(--green);border-radius:var(--radius);padding:24px 26px;color:var(--butter);transition:transform var(--transition),box-shadow var(--transition);box-shadow:var(--shadow-sm);" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform='none'">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-family:var(--font-body);font-size:0.65rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;opacity:0.6;">Research Question 2</div>
+            <!-- Dual Weather Wind & Sun Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;color:var(--butter);opacity:0.8;"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
+          </div>
+          <div style="font-family:var(--font-display);font-size:1.15rem;font-weight:900;line-height:1.25;margin-bottom:10px;">Are January and July rainfall statistically independent?</div>
+          <p style="font-size:0.88rem;color:rgba(255,239,179,0.75);max-width:none;margin:0;">Pearson r = <strong style="color:var(--butter);">-0.052</strong> (p &asymp; 0.0009) and probability gap = 0.018: statistically detectable but practically negligible dependence, consistent with winter and monsoon rain having different drivers.</p>
+        </div>
+        <div style="background:var(--green);border-radius:var(--radius);padding:24px 26px;color:var(--butter);transition:transform var(--transition),box-shadow var(--transition);box-shadow:var(--shadow-sm);" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform='none'">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-family:var(--font-body);font-size:0.65rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;opacity:0.6;">Research Question 3</div>
+            <!-- Barometer / Trendline Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;color:var(--butter);opacity:0.8;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          </div>
+          <div style="font-family:var(--font-display);font-size:1.15rem;font-weight:900;line-height:1.25;margin-bottom:10px;">Is there a measurable long-term trend in annual rainfall?</div>
+          <p style="font-size:0.88rem;color:rgba(255,239,179,0.75);max-width:none;margin:0;">Polynomial least-squares fit for Kerala gives slope = <strong style="color:var(--butter);">-2.84 mm/yr</strong> (p = 0.016), but R&sup2; is only about 0.05: a significant but weak decline masked by year-to-year variability.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLATE IMAGE GALLERY -->
+<section class="section section--green">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,239,179,0.6);">Field Observations</span>
+    <h2 style="color:var(--butter);margin-bottom:8px;">India in Rain</h2>
+    <p style="color:rgba(255,239,179,0.72);margin-bottom:36px;">The meteorological reality behind the numbers, from Kerala to the Himalayan foothills.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;">
+      <div class="plate-card" style="height:320px;">
+        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80&auto=format&fit=crop" alt="Lush green monsoon landscape Western Ghats" />
+        <div class="plate-overlay">
+          <span class="plate-tag">Plate I. Field Observation</span>
+          <div class="plate-title">Southwest Monsoon Cloudburst</div>
+          <p class="plate-desc">Western Ghats crest, generating up to 4,000+ mm of orographic precipitation in Kerala.</p>
+        </div>
+      </div>
+      <div class="plate-card" style="height:320px;">
+        <img src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=80&auto=format&fit=crop" alt="Monsoon rain over agricultural fields" />
+        <div class="plate-overlay">
+          <span class="plate-tag">Plate II. Agricultural Impact</span>
+          <div class="plate-title">Monsoon and the Paddy Cycle</div>
+          <p class="plate-desc">June-September rainfall determines kharif output across 140 million farm households.</p>
+        </div>
+      </div>
+      <div class="plate-card" style="height:320px;">
+        <img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800&q=80&auto=format&fit=crop" alt="Rajasthan arid desert landscape dunes" />
+        <div class="plate-overlay">
+          <span class="plate-tag">Plate III. Rainfall Extremes</span>
+          <div class="plate-title">Thar Desert: Deficient Zone</div>
+          <p class="plate-desc">West Rajasthan records as little as 62.3 mm annually, anchoring the lower tail of the distribution.</p>
+        </div>
+      </div>
+      <div class="plate-card" style="height:320px;">
+        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80&auto=format&fit=crop" alt="Misty mountain landscape Northeast India" />
+        <div class="plate-overlay">
+          <span class="plate-tag">Plate IV. North-East Maximum</span>
+          <div class="plate-title">Sub-Himalayan Rainbelt</div>
+          <p class="plate-desc">Assam and the sub-Himalayan belt receive peak rainfall driven by Bay of Bengal moisture flux.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STAT STRIP -->
+<section class="section">
+  <div class="container">
+    <span class="section-label">Dataset at a Glance</span>
+    <h2 style="margin-bottom:8px;">The Numbers</h2>
+    <p style="opacity:0.72;margin-bottom:0;">Everything the dataset contains, at a glance.</p>
+    <div class="stat-strip">
+      <div class="stat-card glass" style="background:rgba(255,239,179,0.5);border:1.5px solid rgba(1,62,55,0.18);">
+        <span class="stat-card__num">115</span>
+        <span class="stat-card__label">Years of Data<br>1901 to 2015</span>
+      </div>
+      <div class="stat-card glass" style="background:rgba(255,239,179,0.5);border:1.5px solid rgba(1,62,55,0.18);">
+        <span class="stat-card__num">36</span>
+        <span class="stat-card__label">Met. Subdivisions<br>across India</span>
+      </div>
+      <div class="stat-card glass" style="background:rgba(255,239,179,0.5);border:1.5px solid rgba(1,62,55,0.18);">
+        <span class="stat-card__num">4,090</span>
+        <span class="stat-card__label">Records<br>(sub-div x year)</span>
+      </div>
+      <div class="stat-card glass" style="background:rgba(255,239,179,0.5);border:1.5px solid rgba(1,62,55,0.18);">
+        <span class="stat-card__num">641</span>
+        <span class="stat-card__label">Districts in<br>Normal Rainfall set</span>
+      </div>
+      <div class="stat-card glass" style="background:rgba(255,239,179,0.5);border:1.5px solid rgba(1,62,55,0.18);">
+        <span class="stat-card__num">1,411</span>
+        <span class="stat-card__label">mm Mean Annual<br>Rainfall</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+  <a href="index.html" class="nav-link active" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </a>
+  <a href="dataset.html" class="nav-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    Dataset
+  </a>
+  <a href="analysis.html" class="nav-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Analysis
+  </a>
+</nav>
+
+<script>
+// Full-hero rain animation
+(function(){
+  const hero = document.getElementById('heroSection');
+  const rainDeco = document.getElementById('rainDeco');
+  const h = hero.offsetHeight || window.innerHeight * 0.88;
+  const N = 90;
+  for (let i = 0; i < N; i++) {
+    const s = document.createElement('span');
+    const left = Math.random() * 100;
+    const delay = Math.random() * 5;
+    const dur = 1.0 + Math.random() * 1.8;
+    const ht = 20 + Math.random() * 20;
+    // travel = hero height + some headroom
+    const travel = h + 60;
+    s.style.cssText = `left:${left}%;animation-delay:${delay}s;animation-duration:${dur}s;height:${ht}px;--rain-travel:translateY(${travel}px);`;
+    rainDeco.appendChild(s);
+  }
+})();
+
+// Scroll fade-in
+const fadeEls = document.querySelectorAll('.fade-in');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+fadeEls.forEach(el => obs.observe(el));
+
+// Problem Statement Weather Rain Canvas Animation
+(function initProblemRain() {
+  const canvas = document.getElementById('problemRainCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let width, height;
+  const drops = [];
+  const splashes = [];
+  const N = 55;
+
+  function resize() {
+    width = canvas.width = canvas.offsetWidth;
+    height = canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < N; i++) {
+    drops.push({
+      x: Math.random() * (width || 800),
+      y: Math.random() * (height || 600),
+      len: 16 + Math.random() * 22,
+      speed: 2.2 + Math.random() * 2.8,
+      opacity: 0.18 + Math.random() * 0.25,
+      width: 1.0 + Math.random() * 0.8
+    });
+  }
+
+  function addSplash(x, y) {
+    if (splashes.length < 15) {
+      splashes.push({ x, y, r: 1, maxR: 4 + Math.random() * 5, opacity: 0.25 });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw rain drops
+    for (let i = 0; i < drops.length; i++) {
+      const d = drops[i];
+      ctx.save();
+      ctx.globalAlpha = d.opacity;
+      ctx.strokeStyle = '#013e37';
+      ctx.lineWidth = d.width;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x + d.len * 0.2, d.y + d.len);
+      ctx.stroke();
+      ctx.restore();
+
+      d.y += d.speed;
+      d.x += d.speed * 0.2;
+
+      if (d.y > height) {
+        if (Math.random() < 0.3) addSplash(d.x, height - 2);
+        d.y = -d.len;
+        d.x = Math.random() * width;
+      }
+      if (d.x > width) d.x = 0;
+    }
+
+    // Draw splashes
+    for (let i = splashes.length - 1; i >= 0; i--) {
+      const s = splashes[i];
+      ctx.save();
+      ctx.globalAlpha = s.opacity;
+      ctx.strokeStyle = '#013e37';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(s.x, s.y, s.r * 1.8, s.r * 0.8, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      s.r += 0.4;
+      s.opacity -= 0.02;
+      if (s.opacity <= 0 || s.r >= s.maxR) {
+        splashes.splice(i, 1);
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

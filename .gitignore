@@ -1,0 +1,12 @@
+# Vercel
+.vercel
+
+# Operating System Metadata
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+
+# IDE & Editor Settings
+.vscode/
+.idea/

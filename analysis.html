@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysis - Indian Rainfall Probability</title>
+  <meta name="description" content="Interactive probability analysis of Indian rainfall: Bayes theorem, independence tests, trend fitting, and histogram exploration." />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="stats.js"></script>
+</head>
+<body>
+
+<!-- PAGE HERO -->
+<header class="page-hero">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,239,179,0.6);">Probability Theory Applied</span>
+    <h1>Statistical Analysis</h1>
+    <p>Bayesian inference, distribution fitting, independence testing and polynomial trends, all computed client-side from the raw CSV.</p>
+  </div>
+</header>
+
+<!-- APPROACH -->
+<section class="section">
+  <div class="container">
+    <span class="section-label">Methodology</span>
+    <h2 style="margin-bottom:32px;">Analytical Approach</h2>
+    <div style="max-width:820px;">
+
+      <div class="approach-step">
+        <div class="step-num">1</div>
+        <div style="flex:1;">
+          <h4>Discrete Random Variable Classification</h4>
+          <p style="margin-top:6px;font-size:0.95rem;opacity:0.8;">
+            Annual rainfall for each subdivision-year pair is classified into three discrete categories, Excess, Normal, and Deficient, based on whether it exceeds the 75th percentile, falls between the 25th and 75th percentile, or lies below the 25th percentile. This defines a discrete probability mass function over the state space.
+          </p>
+          <span class="formula-block">P(X = k) = n_k / N,  k &isin; {Excess, Normal, Deficient}</span>
+        </div>
+      </div>
+
+      <div class="approach-step">
+        <div class="step-num">2</div>
+        <div style="flex:1;">
+          <h4>Continuous Distribution Fitting</h4>
+          <p style="margin-top:6px;font-size:0.95rem;opacity:0.8;">
+            Monsoon (Jun-Sep) rainfall across all records is modelled as a Normal distribution fitted by maximum likelihood estimation (&mu;&#770; = sample mean, &sigma;&#770;&sup2; = mean squared deviation, dividing by n). The histogram below shows the chosen subdivision's monsoon rainfall with its own Normal and lognormal MLE fits, so the two models can be compared.
+          </p>
+          <span class="formula-block">X ~ N(&mu; = <span id="mleMu">&hellip;</span>, &sigma; = <span id="mleSigma">&hellip;</span>)&nbsp;&nbsp;&nbsp;f(x) = (1 / &sigma;&radic;2&pi;) &middot; e<sup>-(x-&mu;)&sup2; / 2&sigma;&sup2;</sup></span>
+          <p id="mleNote" style="margin-top:8px;font-size:0.85rem;opacity:0.8;max-width:none;">&hellip;</p>
+        </div>
+      </div>
+
+      <div class="approach-step">
+        <div class="step-num">3</div>
+        <div style="flex:1;">
+          <h4>Bayes' Rule Application</h4>
+          <p style="margin-top:6px;font-size:0.95rem;opacity:0.8;">
+            We define "high annual" (annual &gt; 75th percentile) and "high monsoon" (Jun-Sep &gt; 75th percentile). Bayes' theorem derives P(A|B) from the reverse conditional P(B|A); the direct frequency count is shown as an arithmetic cross-check.
+          </p>
+          <span class="formula-block" id="bayesFormula">P(A|B) = P(B|A) &middot; P(A) / P(B)&nbsp;&nbsp;&nbsp;Result: computing&hellip;</span>
+        </div>
+      </div>
+
+      <div class="approach-step">
+        <div class="step-num">4</div>
+        <div style="flex:1;">
+          <h4>Statistical Independence Test</h4>
+          <p style="margin-top:6px;font-size:0.95rem;opacity:0.8;">
+            January and July rainfall are binarised above and below the median. Joint probabilities are compared with the product of marginals under the independence assumption. The probability gap and the Pearson correlation (with its p-value) are computed live below. Zero correlation would only rule out linear dependence.
+          </p>
+          <span class="formula-block">Independence: P(A &cap; B) = P(A) &middot; P(B)&nbsp;&nbsp;&nbsp;Gap = |P(Jan &cap; Jul) - P(Jan)&middot;P(Jul)| &asymp; <span id="gapVal">computing&hellip;</span></span>
+        </div>
+      </div>
+
+      <div class="approach-step">
+        <div class="step-num">5</div>
+        <div style="flex:1;">
+          <h4>Polynomial Trend Fitting</h4>
+          <p style="margin-top:6px;font-size:0.95rem;opacity:0.8;">
+            Annual rainfall time-series for any subdivision is fitted with degree-1, -2, or -3 polynomials via least-squares, computed live in-browser using Gaussian elimination on the normal equations. For Kerala the linear slope is -2.84 mm/year (p = 0.016) but R&sup2; is only about 0.05, so the trend explains roughly 5% of the year-to-year variance. Adjusted R&sup2; and a slope t-test are shown next to the chart.
+          </p>
+          <span class="formula-block">min&nbsp;&sum;(y_i - &sum; a_k &middot; x_i^k)&sup2;&nbsp;&nbsp;&nbsp;solved via&nbsp;(A<sup>T</sup>A) a = A<sup>T</sup>y</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- INTERACTIVE HISTOGRAM + TREND (butter background, matching reference design) -->
+<section class="section section--green" id="histSection">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,239,179,0.6);">Interactive Explorer</span>
+    <h2 style="color:var(--butter);margin-bottom:8px;">Monsoon Distribution and Annual Trend</h2>
+    <p style="color:rgba(255,239,179,0.72);margin-bottom:28px;">Select a subdivision and polynomial degree to explore the monsoon distribution (with fitted densities) and the long-term annual trend.</p>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:28px;">
+      <div class="select-wrap">
+        <!-- Butter bg + green text so native dropdown options are always readable -->
+        <select id="histSubdiv" style="min-width:260px;background:var(--butter);color:var(--green);border-color:rgba(255,239,179,0.5);font-weight:500;">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <!-- Butter-themed toggle on green background -->
+      <div id="degreeToggle" style="display:inline-flex;gap:4px;background:rgba(255,239,179,0.18);border:1.5px solid rgba(255,239,179,0.35);border-radius:100px;padding:4px;">
+        <button class="deg-btn" data-deg="1" style="padding:7px 18px;border-radius:100px;border:none;font-family:var(--font-body);font-size:0.82rem;font-weight:600;cursor:pointer;background:var(--butter);color:var(--green);transition:all 0.25s ease;">Degree 1</button>
+        <button class="deg-btn" data-deg="2" style="padding:7px 18px;border-radius:100px;border:none;font-family:var(--font-body);font-size:0.82rem;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,239,179,0.8);transition:all 0.25s ease;">Degree 2</button>
+        <button class="deg-btn" data-deg="3" style="padding:7px 18px;border-radius:100px;border:none;font-family:var(--font-body);font-size:0.82rem;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,239,179,0.8);transition:all 0.25s ease;">Degree 3</button>
+      </div>
+    </div>
+
+    <!-- Two chart boxes, butter background per reference image -->
+    <div class="grid-2" style="gap:24px;">
+      <!-- Trend chart LEFT -->
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <h4 id="trendTitle">Annual Trend Regression (1901 - 2015)</h4>
+            <p class="chart-sub" id="trendSub">Fitted using least-squares polynomial (Degree 1)</p>
+          </div>
+          <span class="chart-badge" id="trendBadge">Slope: ...</span>
+        </div>
+        <canvas id="trendChart" height="260"></canvas>
+        <div class="chart-footer">
+          <span id="trendLegend">Solid Dark Green: Degree 1 polynomial fit</span>
+          <span id="trendR2">R&sup2; = ...</span>
+        </div>
+      </div>
+      <!-- Histogram RIGHT -->
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <h4>Monsoon (Jun-Sep) Rainfall Histogram</h4>
+            <p class="chart-sub" id="histSub">Binned frequency distribution (10 bins)</p>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;opacity:0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <canvas id="histChart" height="260"></canvas>
+        <div class="chart-footer">
+          <span id="histFooterLeft">Sample Size: ... years</span>
+          <span id="histFooterRight">Mean: ... mm</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DISCRETE RANDOM VARIABLE: PMF -->
+<section class="section">
+  <div class="container">
+    <span class="section-label">Discrete Random Variable</span>
+    <h2 style="margin-bottom:8px;">Annual Rainfall Category: Empirical PMF</h2>
+    <p style="opacity:0.72;margin-bottom:32px;" id="pmfSub">Computing&hellip;</p>
+    <div class="chart-box" style="max-width:860px;">
+      <canvas id="pmfChart" height="240"></canvas>
+      <p id="pmfFoot" style="font-size:0.78rem;opacity:0.6;margin-top:10px;max-width:none;"></p>
+    </div>
+  </div>
+</section>
+
+<!-- BAYES PANEL -->
+<section class="section" id="bayesSection" style="position:relative;overflow:hidden;background:var(--butter);">
+  <!-- Rainfall weather backdrop image -->
+  <div style="position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=1600&q=80&auto=format&fit=crop');background-size:cover;background-position:center;opacity:0.08;mix-blend-mode:multiply;pointer-events:none;z-index:0;"></div>
+  
+  <!-- Rain drop canvas animation -->
+  <canvas id="bayesRainCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+
+  <!-- Meteorological Isobar & Weather Contour SVG Deco -->
+  <svg style="position:absolute;left:-40px;top:-40px;width:320px;height:320px;opacity:0.07;pointer-events:none;z-index:0;" viewBox="0 0 200 200" fill="none">
+    <circle cx="100" cy="100" r="95" stroke="#013e37" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <circle cx="100" cy="100" r="75" stroke="#013e37" stroke-width="1.2"/>
+    <circle cx="100" cy="100" r="55" stroke="#013e37" stroke-width="1.2" stroke-dasharray="2 3"/>
+    <circle cx="100" cy="100" r="35" stroke="#013e37" stroke-width="1"/>
+    <path d="M100 0 L100 200 M0 100 L200 100" stroke="#013e37" stroke-width="0.8" stroke-dasharray="3 3"/>
+  </svg>
+  <div class="container" style="position:relative;z-index:1;">
+    <span class="section-label">Bayesian Inference</span>
+    <h2 style="margin-bottom:8px;">Bayes' Rule Results</h2>
+    <!-- Global scope callout -->
+    <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(1,62,55,0.09);border:1.5px solid rgba(1,62,55,0.18);border-radius:100px;padding:7px 18px;margin-bottom:28px;">
+      <svg viewBox="0 0 20 20" fill="none" style="width:15px;height:15px;flex-shrink:0;"><circle cx="10" cy="10" r="9" stroke="#013e37" stroke-width="1.8"/><path d="M10 9v5" stroke="#013e37" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="6.5" r="1" fill="#013e37"/></svg>
+      <span style="font-size:0.8rem;font-weight:600;color:var(--green);letter-spacing:0.04em;">These values are <strong>global aggregates</strong> computed across all 4,090 records (36 subdivisions, 1901-2015; rows with missing values excluded). They do not change per state or year.</span>
+    </div>
+    <div class="glass--dark" style="padding:36px;" id="bayesPanel">
+      <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:var(--butter);margin-bottom:8px;">P(high_annual | high_monsoon)</div>
+      <p style="color:rgba(255,239,179,0.72);margin-bottom:24px;font-size:0.95rem;max-width:none;">
+        Bayes' theorem gives P(A|B) = P(B|A)&middot;P(A)/P(B); the direct count is an arithmetic cross-check.
+        Here A = {annual rainfall &gt; 75th percentile}, B = {monsoon rainfall &gt; 75th percentile}.
+      </p>
+      <div class="bayes-grid">
+        <div class="bayes-card" style="background:rgba(255,239,179,0.12);border:1.5px solid rgba(255,239,179,0.2);">
+          <span class="bayes-card__val" id="bayesPA">&hellip;</span>
+          <span class="bayes-card__key">P(High Annual)</span>
+        </div>
+        <div class="bayes-card" style="background:rgba(255,239,179,0.12);border:1.5px solid rgba(255,239,179,0.2);">
+          <span class="bayes-card__val" id="bayesPB">&hellip;</span>
+          <span class="bayes-card__key">P(High Monsoon)</span>
+        </div>
+        <div class="bayes-card" style="background:rgba(255,239,179,0.12);border:1.5px solid rgba(255,239,179,0.2);">
+          <span class="bayes-card__val" id="bayesPBgivenA">&hellip;</span>
+          <span class="bayes-card__key">P(High Monsoon | High Annual)</span>
+        </div>
+        <div class="bayes-card" style="background:rgba(255,239,179,0.2);border:1.5px solid rgba(255,239,179,0.4);">
+          <span class="bayes-card__val" style="color:var(--butter);" id="bayesPAgivenB_bayes">&hellip;</span>
+          <span class="bayes-card__key">P(High Annual | High Monsoon)<br><small>via Bayes</small></span>
+        </div>
+        <div class="bayes-card" style="background:rgba(255,239,179,0.12);border:1.5px solid rgba(255,239,179,0.2);">
+          <span class="bayes-card__val" id="bayesPAgivenB_direct">&hellip;</span>
+          <span class="bayes-card__key">P(High Annual | High Monsoon)<br><small>direct count</small></span>
+        </div>
+      </div>
+      <div style="margin-top:24px;padding:18px 22px;background:rgba(255,239,179,0.08);border-radius:10px;border-left:3px solid rgba(255,239,179,0.4);">
+        <p style="font-size:0.9rem;color:rgba(255,239,179,0.85);max-width:none;margin:0;">
+          <strong style="color:var(--butter);">Interpretation:</strong>
+          The Bayes value (<span id="interpBayes">&hellip;</span>) equals the direct count (<span id="interpDirect">&hellip;</span>) by algebra, since both come from the same frequency table, so this is a consistency check and not independent evidence.
+          The substantive result: when monsoon rainfall is in the top quarter, the chance that annual rainfall is also in the top quarter is <span id="interpPct">&hellip;</span>,
+          <span id="interpLift">&hellip;</span> times the 25% baseline. Pooled over all records, Jun-Sep contributes <span id="interpShare">&hellip;</span> of total annual rainfall.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INDEPENDENCE PANEL -->
+<section class="section section--green" id="independenceSection">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,239,179,0.6);">Statistical Independence</span>
+    <h2 style="color:var(--butter);margin-bottom:32px;">January vs. July Rainfall</h2>
+    <div class="grid-2" style="align-items:start;gap:28px;">
+      <div>
+        <div style="background:rgba(255,239,179,0.08);border:1.5px solid rgba(255,239,179,0.15);border-radius:16px;padding:32px;">
+          <p style="color:rgba(255,239,179,0.6);font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Pearson Correlation</p>
+          <span class="corr-num" id="corrNum">&hellip;</span>
+          <p style="margin-top:14px;color:rgba(255,239,179,0.78);font-size:0.95rem;max-width:none;">
+            Pooled Pearson r (n = <span id="corrN">&hellip;</span>), p = <span id="corrP">&hellip;</span>, r&sup2; = <span id="corrR2">&hellip;</span>, sample covariance = <span id="corrCov">&hellip;</span> mm&sup2;.
+            With this many points even a tiny r is statistically significant, but January explains well under 1% of the variance in July, so the dependence is practically negligible.
+            Median-split gap |P(Jan&cap;Jul) - P(Jan)&middot;P(Jul)| = <span id="gapVal2">&hellip;</span>.
+          </p>
+          <div style="margin-top:20px;padding:16px 18px;background:rgba(255,239,179,0.08);border-radius:8px;border-left:3px solid rgba(255,239,179,0.4);">
+            <p style="font-size:0.88rem;color:rgba(255,239,179,0.8);max-width:none;margin:0;">
+              <strong style="color:var(--butter);">Plausible physical reason:</strong>
+              January rainfall is driven by Western Disturbances (extratropical systems from the Mediterranean), while July is peak Southwest Monsoon season,
+              entirely different atmospheric circulation systems, consistent with the very weak correlation.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="chart-box">
+        <h4 style="margin-bottom:4px;color:var(--green);">Scatter: Jan vs Jul Rainfall (mm)</h4>
+        <p style="font-size:0.76rem;color:rgba(1,62,55,0.5);margin-bottom:14px;max-width:none;">Each point = one sub-division x year pair (all valid pairs, pooled)</p>
+        <canvas id="corrChart" height="300"></canvas>
+        <p style="color:rgba(1,62,55,0.45);font-size:0.75rem;margin-top:10px;max-width:none;">
+          Near-horizontal fitted line: pooled r is close to 0. Zero correlation rules out only linear dependence, and pooling different climates can hide within-region relationships.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOP-10 STATES -->
+<section class="section">
+  <div class="container">
+    <span class="section-label">District Normal Rainfall</span>
+    <h2 style="margin-bottom:8px;">Top 10 States by Avg Annual Rainfall</h2>
+    <p style="opacity:0.72;margin-bottom:32px;">Computed from the district-level IMD normal rainfall dataset (641 districts), grouped by state and averaged.</p>
+    <div class="chart-box" style="max-width:860px;">
+      <canvas id="statesChart" height="360"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+  <a href="index.html" class="nav-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </a>
+  <a href="dataset.html" class="nav-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    Dataset
+  </a>
+  <a href="analysis.html" class="nav-link active" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Analysis
+  </a>
+</nav>
+
+<script>
+// ── Polynomial helpers ──────────────────────────────
+function polyFit(xs, ys, deg) {
+  const n = xs.length, cols = deg + 1;
+  const A = xs.map(x => Array.from({length:cols}, (_,i) => Math.pow(x, deg-i)));
+  const AtA = Array.from({length:cols}, () => new Array(cols).fill(0));
+  const Atb = new Array(cols).fill(0);
+  for (let i=0;i<n;i++) { for (let r=0;r<cols;r++) { Atb[r]+=A[i][r]*ys[i]; for(let c=0;c<cols;c++) AtA[r][c]+=A[i][r]*A[i][c]; } }
+  const aug = AtA.map((row,i)=>[...row,Atb[i]]);
+  for (let col=0;col<cols;col++) {
+    let mx=col; for(let r=col+1;r<cols;r++) if(Math.abs(aug[r][col])>Math.abs(aug[mx][col])) mx=r;
+    [aug[col],aug[mx]]=[aug[mx],aug[col]];
+    for (let r=col+1;r<cols;r++) { const f=aug[r][col]/aug[col][col]; for(let c=col;c<=cols;c++) aug[r][c]-=f*aug[col][c]; }
+  }
+  const coeff=new Array(cols).fill(0);
+  for (let r=cols-1;r>=0;r--) { coeff[r]=aug[r][cols]/aug[r][r]; for(let i=0;i<r;i++) aug[i][cols]-=aug[i][r]*coeff[r]; }
+  return coeff;
+}
+function polyEval(coeff,x) { let v=0,d=coeff.length-1; for(let i=0;i<=d;i++) v+=coeff[i]*Math.pow(x,d-i); return v; }
+function polySSE(coeff,xs,ys) { return xs.reduce((s,x,i)=>s+(ys[i]-polyEval(coeff,x))**2,0); }
+function polyR2(coeff,xs,ys) {
+  const mean=ys.reduce((a,b)=>a+b,0)/ys.length;
+  const ss_tot=ys.reduce((s,y)=>s+(y-mean)**2,0);
+  const ss_res=polySSE(coeff,xs,ys);
+  return 1-ss_res/ss_tot;
+}
+
+function makeHistogram(values, nBins) {
+  const mn=Math.min(...values), mx=Math.max(...values), bw=(mx-mn)/nBins || 1;
+  const counts=new Array(nBins).fill(0);
+  const labels=Array.from({length:nBins},(_,i)=>Math.round(mn+i*bw));
+  const centers=Array.from({length:nBins},(_,i)=>mn+(i+0.5)*bw);
+  for (const v of values) { let b=Math.floor((v-mn)/bw); if(b===nBins) b=nBins-1; counts[b]++; }
+  return {labels,counts,centers,binWidth:bw,min:mn,max:mx};
+}
+
+let histChart=null, trendChart=null, corrChart=null, statesChart=null, pmfChart=null, globalFit=null;
+function destroyIfExists(c) { if(c) c.destroy(); }
+
+let allData=[], subdivisions=[], currentDeg=1;
+
+function getSubdivData(s) { return allData.filter(r=>r.SUBDIVISION===s).sort((a,b)=>a.YEAR-b.YEAR); }
+
+// Dark green color for charts on butter background
+const G = '#013e37';
+const G2 = 'rgba(1,62,55,0.65)';
+const G3 = 'rgba(1,62,55,0.18)';
+
+function drawHistogram(subdiv) {
+  const rows = getSubdivData(subdiv);
+  const vals = rows.map(r=>r['Jun-Sep']).filter(Stats.isNum);
+  if (vals.length < 3) { destroyIfExists(histChart); histChart=null; document.getElementById('histSub').textContent = `Not enough monsoon data for ${subdiv}`; return; }
+  const {centers,counts,binWidth} = makeHistogram(vals, 10);
+  const N = vals.length, nf = Stats.normalMLE(vals), lf = Stats.lognormalMLE(vals);
+  const normalCurve = centers.map(c=>+(N*binWidth*Stats.normPdf(c,nf.mu,nf.sigma)).toFixed(2));
+  const lognormCurve = centers.map(c=>+(N*binWidth*Stats.lognormPdf(c,lf.mu,lf.sigma)).toFixed(2));
+  destroyIfExists(histChart);
+  const ctx = document.getElementById('histChart').getContext('2d');
+  histChart = new Chart(ctx, {
+    data: {
+      labels: centers.map(c=>Math.round(c)+' mm'),
+      datasets: [
+        { type:'bar', label:'Observed years', data:counts, backgroundColor:G3, borderColor:G, borderWidth:1, borderRadius:3, order:3 },
+        { type:'line', label:'Normal MLE', data:normalCurve, borderColor:G, borderWidth:2.5, pointRadius:0, tension:0.35, order:1 },
+        { type:'line', label:'Lognormal MLE', data:lognormCurve, borderColor:'#b45309', borderDash:[6,4], borderWidth:2, pointRadius:0, tension:0.35, order:2 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {labels:{color:G2,font:{size:11},boxWidth:12}},
+        tooltip: { callbacks: { title: ctx=>`~${ctx[0].label}`, label: ctx=>`${ctx.dataset.label}: ${ctx.dataset.type==='bar'? ctx.raw+' yr'+(ctx.raw!==1?'s':'') : ctx.raw}` } }
+      },
+      scales: {
+        x: { ticks:{color:G2,maxRotation:45,font:{size:10}}, grid:{color:G3} },
+        y: { ticks:{color:G2,font:{size:10}}, grid:{color:G3}, beginAtZero:true, title:{display:true,text:'Years (expected count for fitted curves)',color:G2,font:{size:10}} }
+      }
+    }
+  });
+  document.getElementById('histSub').textContent = `Monsoon (Jun-Sep) rainfall, 10 equal-width bins, with MLE fits for ${subdiv}`;
+  document.getElementById('histFooterLeft').textContent = `Sample Size: ${N} years`;
+  document.getElementById('histFooterRight').textContent = `\u03bc\u0302 = ${nf.mu.toFixed(0)} mm, \u03c3\u0302 = ${nf.sigma.toFixed(0)} mm, skew = ${Stats.skewness(vals).toFixed(2)}`;
+}
+
+function drawTrend(subdiv, deg) {
+  const rows = getSubdivData(subdiv);
+  // Keep only rows where BOTH year and annual are numbers, so x and y stay aligned (missing values are the string "NA").
+  const ok = rows.filter(r=>Stats.isNum(r.YEAR)&&Stats.isNum(r.ANNUAL));
+  const years = ok.map(r=>r.YEAR), annuals = ok.map(r=>r.ANNUAL);
+  if (years.length < deg + 2) {
+    destroyIfExists(trendChart); trendChart=null;
+    document.getElementById('trendSub').textContent = 'Not enough valid years for this polynomial degree.';
+    document.getElementById('trendBadge').textContent = '';
+    document.getElementById('trendR2').innerHTML = '';
+    return;
+  }
+  const yr0 = years[0];
+  const xs = years.map(y=>y-yr0);
+  const coeff = polyFit(xs, annuals, deg);
+  const sse = polySSE(coeff, xs, annuals);
+  const r2 = polyR2(coeff, xs, annuals);
+  const trendY = xs.map(x=>polyEval(coeff,x));
+  destroyIfExists(trendChart);
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  trendChart = new Chart(ctx, {
+    data: {
+      datasets: [
+        {
+          type: 'line',
+          label: 'Annual Rainfall',
+          data: years.map((y,i)=>({x:y,y:annuals[i]})),
+          borderColor: G2,
+          borderWidth: 1,
+          backgroundColor: 'transparent',
+          pointBackgroundColor: G,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          showLine: true,
+          tension: 0,
+          order: 2
+        },
+        {
+          type: 'line',
+          label: `Degree-${deg} fit`,
+          data: years.map((y,i)=>({x:y,y:trendY[i]})),
+          borderColor: G,
+          borderWidth: 2.5,
+          fill: false,
+          pointRadius: 0,
+          tension: 0.3,
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels:{color:G2,font:{size:11},boxWidth:12} }
+      },
+      scales: {
+        x: {
+          type:'linear',
+          ticks:{color:G2,font:{size:10},stepSize:20,callback:v=>v},
+          grid:{color:G3},
+          title:{display:false}
+        },
+        y: {
+          ticks:{color:G2,font:{size:10},callback:v=>v+'mm'},
+          grid:{color:G3}
+        }
+      }
+    }
+  });
+  const yr1 = years[0], yr2 = years[years.length-1];
+  document.getElementById('trendTitle').textContent = `Annual Trend Regression (${yr1} - ${yr2})`;
+  document.getElementById('trendSub').textContent = `Fitted using least-squares polynomial (Degree ${deg}) · SSE = ${Math.round(sse).toLocaleString()}`;
+  document.getElementById('trendLegend').textContent = `Solid Dark Green: Degree ${deg} polynomial fit`;
+  const adj = Stats.adjR2(r2, years.length, deg);
+  document.getElementById('trendR2').innerHTML = `R&sup2; = ${r2.toFixed(4)} &middot; adj. R&sup2; = ${adj.toFixed(4)}`;
+  let badge = `Adj. R\u00b2 = ${adj.toFixed(3)}`;
+  if (deg === 1) { const lr = Stats.linreg(years, annuals); badge = `Slope ${lr.slope.toFixed(3)} mm/yr (p = ${Stats.fmtP(lr.p)})`; }
+  document.getElementById('trendBadge').textContent = badge;
+}
+
+function updateCharts() {
+  const s = document.getElementById('histSubdiv').value;
+  if (!s) return;
+  drawHistogram(s);
+  drawTrend(s, currentDeg);
+}
+
+function drawCorrelation(ind) {
+  const pts = ind.jan.map((x,i)=>({x, y:ind.jul[i]}));
+  const my = Stats.mean(ind.jul), mx = Stats.mean(ind.jan);
+  const slope = ind.cov*(ind.n-1) / ind.jan.reduce((s,v)=>s+(v-mx)**2,0), intercept = my - slope*mx;
+  const xMin = Math.min(...ind.jan), xMax = Math.max(...ind.jan);
+  destroyIfExists(corrChart);
+  const ctx=document.getElementById('corrChart').getContext('2d');
+  corrChart=new Chart(ctx, {
+    data: {
+      datasets: [
+        { type:'scatter', label:`Sub-division x year (n = ${ind.n})`, data:pts, backgroundColor:G3, borderColor:'transparent', pointRadius:2, pointHoverRadius:4 },
+        { type:'line', label:`Fit (r = ${ind.r.toFixed(3)})`, data:[{x:xMin,y:slope*xMin+intercept},{x:xMax,y:slope*xMax+intercept}], borderColor:G, borderWidth:2, fill:false, pointRadius:0 }
+      ]
+    },
+    options: {
+      responsive:true,
+      plugins: {
+        legend:{labels:{color:G2,font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.type==='scatter' ? `Jan: ${ctx.raw.x.toFixed(1)} mm, Jul: ${ctx.raw.y.toFixed(1)} mm` : ctx.dataset.label}}
+      },
+      scales: {
+        x:{ticks:{color:G2,font:{size:10}},grid:{color:G3},title:{display:true,text:'January rainfall (mm)',color:G2,font:{size:11}}},
+        y:{ticks:{color:G2,font:{size:10}},grid:{color:G3},title:{display:true,text:'July rainfall (mm)',color:G2,font:{size:11}}}
+      }
+    }
+  });
+}
+
+function drawStatesChart(distRows) {
+  const stateMap={};
+  for (const row of distRows) { const st=row.STATE_UT_NAME, a=+row.ANNUAL; if(!st||isNaN(a)) continue; (stateMap[st]=stateMap[st]||[]).push(a); }
+  const avgs=Object.entries(stateMap).map(([st,v])=>({state:st,avg:v.reduce((a,b)=>a+b,0)/v.length})).sort((a,b)=>b.avg-a.avg).slice(0,10);
+  const shades=avgs.map((_,i)=>`rgba(1,62,55,${0.92-i*0.07})`);
+  destroyIfExists(statesChart);
+  const ctx=document.getElementById('statesChart').getContext('2d');
+  statesChart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:avgs.map(d=>d.state.replace('And','&').split(' ').map(w=>w[0]+w.slice(1).toLowerCase()).join(' ')),
+      datasets:[{label:'Avg Annual Rainfall (mm)',data:avgs.map(d=>Math.round(d.avg)),backgroundColor:shades,borderColor:G,borderWidth:1.5,borderRadius:6}]
+    },
+    options:{
+      indexAxis:'y',responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw.toLocaleString()} mm`}}},
+      scales:{
+        x:{ticks:{color:G2,font:{size:10}},grid:{color:G3},title:{display:true,text:'Average Annual Rainfall (mm)',color:G2,font:{size:11}}},
+        y:{ticks:{color:G,font:{size:11,weight:'500'}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+// Live probability engine - every number in the Bayes and Independence panels
+// is computed here from the parsed CSV on load. No value is hardcoded.
+const $ = id => document.getElementById(id);
+
+function computeGlobalStats(data) {
+  const b = Stats.bayes(data);
+  $('bayesPA').textContent = b.pA.toFixed(3);
+  $('bayesPB').textContent = b.pB.toFixed(3);
+  $('bayesPBgivenA').textContent = b.pBgivenA.toFixed(3);
+  $('bayesPAgivenB_bayes').textContent = b.pAgivenB_bayes.toFixed(3);
+  $('bayesPAgivenB_direct').textContent = b.pAgivenB_direct.toFixed(3);
+  $('bayesFormula').innerHTML =
+    `P(A|B) = P(B|A) &middot; P(A) / P(B)&nbsp;&nbsp;&nbsp;Result: ${b.pBgivenA.toFixed(3)} &times; ${b.pA.toFixed(3)} / ${b.pB.toFixed(3)} = ${b.pAgivenB_bayes.toFixed(3)}`;
+  $('interpBayes').textContent = b.pAgivenB_bayes.toFixed(3);
+  $('interpDirect').textContent = b.pAgivenB_direct.toFixed(3);
+  $('interpPct').textContent = (b.pAgivenB_direct*100).toFixed(1) + '%';
+  $('interpLift').textContent = b.lift.toFixed(2);
+  $('interpShare').textContent = (b.monsoonShare*100).toFixed(1) + '%';
+
+  const ind = Stats.independence(data);
+  $('corrNum').textContent = ind.r.toFixed(3);
+  $('gapVal').textContent = ind.gap.toFixed(3);
+  $('gapVal2').textContent = ind.gap.toFixed(3);
+  $('corrN').textContent = ind.n.toLocaleString();
+  $('corrP').textContent = Stats.fmtP(ind.p);
+  $('corrR2').textContent = ind.r2.toFixed(4);
+  $('corrCov').textContent = ind.cov.toFixed(1);
+  drawCorrelation(ind);
+}
+
+// Discrete random variable X in {Deficient, Normal, Excess}: P(X = k) = n_k / N
+function drawPMF(data) {
+  const vals = data.map(r=>r.ANNUAL).filter(Stats.isNum);
+  const m = Stats.pmf3(vals), keys = ['Deficient','Normal','Excess'];
+  destroyIfExists(pmfChart);
+  pmfChart = new Chart($('pmfChart').getContext('2d'), {
+    type:'bar',
+    data:{ labels:[`Deficient (< Q1 = ${m.q1.toFixed(0)} mm)`,'Normal (Q1 to Q3)',`Excess (> Q3 = ${m.q3.toFixed(0)} mm)`],
+           datasets:[{ label:'P(X = k)', data:keys.map(k=>m.pmf[k]), backgroundColor:[G3,G2,G], borderColor:G, borderWidth:1.5, borderRadius:6 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`P = ${c.raw.toFixed(3)} (${m.counts[keys[c.dataIndex]]} of ${m.n})`}}},
+      scales:{ x:{ticks:{color:G,font:{size:11}},grid:{display:false}}, y:{beginAtZero:true,max:0.6,ticks:{color:G2,font:{size:10}},grid:{color:G3},title:{display:true,text:'Probability',color:G2,font:{size:11}}} } }
+  });
+  $('pmfSub').textContent = `X classifies each of the ${m.n.toLocaleString()} subdivision-year annual totals using the empirical quartiles. The probabilities sum to 1.`;
+  $('pmfFoot').textContent = keys.map(k=>`P(${k}) = ${m.counts[k]}/${m.n} = ${m.pmf[k].toFixed(3)}`).join('   |   ') + '. Quartile thresholds make the 25/50/25 split true by construction.';
+}
+
+// Normal MLE of Jun-Sep rainfall over all records, with skewness diagnostic
+function fitMonsoon(data) {
+  const vals = data.map(r=>r['Jun-Sep']).filter(Stats.isNum);
+  const nf = Stats.normalMLE(vals), lf = Stats.lognormalMLE(vals), sk = Stats.skewness(vals);
+  const pNeg = Stats.normCdf(0, nf.mu, nf.sigma);
+  $('mleMu').textContent = nf.mu.toFixed(1);
+  $('mleSigma').textContent = nf.sigma.toFixed(1);
+  $('mleNote').textContent = `n = ${vals.length}. Sample skewness = ${sk.toFixed(2)}, so the Normal fit is poor: it puts ${(pNeg*100).toFixed(1)}% of its probability on negative rainfall. Lognormal MLE: ln X ~ N(${lf.mu.toFixed(2)}, ${lf.sigma.toFixed(2)}) is shown for comparison.`;
+  return { ...nf, ln: lf, skew: sk, n: vals.length };
+}
+
+Papa.parse('rainfall in india 1901-2015.csv', {
+  download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+  complete(results) {
+    allData=results.data;
+    globalFit=fitMonsoon(allData);
+    subdivisions=[...new Set(allData.map(r=>r.SUBDIVISION))].sort();
+    const sel=document.getElementById('histSubdiv');
+    sel.innerHTML=subdivisions.map(s=>`<option value="${s}">${s}</option>`).join('');
+    const ki=subdivisions.findIndex(s=>s.toLowerCase().includes('kerala'));
+    if(ki>=0) sel.selectedIndex=ki;
+    updateCharts();
+    computeGlobalStats(allData);
+    drawPMF(allData);
+  },
+  error(err) {
+    document.querySelectorAll('canvas').forEach(c=>{
+      c.parentElement.innerHTML=`<p style="color:#c00;padding:20px;font-size:0.9rem;">Error: ${err.message}. Please serve via a local web server.</p>`;
+    });
+  }
+});
+
+Papa.parse('district wise rainfall normal.csv', {
+  download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+  complete(results) { drawStatesChart(results.data); }
+});
+
+document.getElementById('degreeToggle').addEventListener('click', e=>{
+  const btn=e.target.closest('.deg-btn');
+  if (!btn) return;
+  // Reset all buttons to inactive style
+  document.querySelectorAll('#degreeToggle .deg-btn').forEach(b=>{
+    b.style.background = 'transparent';
+    b.style.color = 'rgba(255,239,179,0.8)';
+    b.style.fontWeight = '500';
+  });
+  // Set active button to butter
+  btn.style.background = 'var(--butter)';
+  btn.style.color = 'var(--green)';
+  btn.style.fontWeight = '600';
+  currentDeg=+btn.dataset.deg;
+  const s=document.getElementById('histSubdiv').value;
+  if(s) drawTrend(s, currentDeg);
+});
+
+document.getElementById('histSubdiv').addEventListener('change', updateCharts);
+
+// ── Bayes section rain canvas ───────────────────────
+(function initBayesRain() {
+  const canvas = document.getElementById('bayesRainCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const drops = [];
+  const N = 80;
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (let i = 0; i < N; i++) {
+    drops.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      len: 14 + Math.random() * 18,
+      speed: 1.8 + Math.random() * 2.4,
+      opacity: 0.25 + Math.random() * 0.5,
+      width: 0.8 + Math.random() * 0.8
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drops.forEach(d => {
+      ctx.save();
+      ctx.globalAlpha = d.opacity;
+      ctx.strokeStyle = '#013e37';
+      ctx.lineWidth = d.width;
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x + d.len * 0.18, d.y + d.len);
+      ctx.stroke();
+      ctx.restore();
+      d.y += d.speed;
+      if (d.y - d.len > canvas.height) {
+        d.y = -d.len;
+        d.x = Math.random() * canvas.width;
+      }
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

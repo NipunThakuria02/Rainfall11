@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dataset - Indian Rainfall Analysis</title>
+  <meta name="description" content="Explore the IMD rainfall dataset schema, summary statistics, and filter live records by meteorological subdivision." />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="stats.js"></script>
+</head>
+<body>
+
+<!-- PAGE HERO -->
+<header class="page-hero">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,239,179,0.6);">IMD · 1901-2015 · Kaggle</span>
+    <h1>The Dataset</h1>
+    <p>115 years of Indian meteorological records, schema, statistics, and live exploration.</p>
+  </div>
+</header>
+
+<!-- SOURCE CITATION + WHY THIS DATASET -->
+<section class="section">
+  <div class="container">
+    <span class="section-label">Source and Citation</span>
+    <h2 style="margin-bottom:32px;">Data Provenance</h2>
+    <div class="grid-2" style="align-items:start;gap:24px;">
+      <div class="glass--dark" style="padding:32px;">
+        <h4 style="color:var(--butter);margin-bottom:16px;">Primary Dataset</h4>
+        <table style="font-size:0.88rem;width:100%;border-collapse:collapse;">
+          <tr><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:rgba(255,239,179,0.6);width:40%;">File</td><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:var(--butter);">rainfall in india 1901-2015.csv</td></tr>
+          <tr><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:rgba(255,239,179,0.6);">Source</td><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:var(--butter);">Indian Meteorological Department (IMD)</td></tr>
+          <tr><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:rgba(255,239,179,0.6);">Platform</td><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:var(--butter);">Kaggle</td></tr>
+          <tr><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:rgba(255,239,179,0.6);">Uploader</td><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:var(--butter);">rajanand</td></tr>
+          <tr><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:rgba(255,239,179,0.6);">Rows</td><td style="padding:7px 0;border-bottom:1px solid rgba(255,239,179,0.12);color:var(--butter);">4,116 (4,090 after cleaning)</td></tr>
+          <tr><td style="padding:7px 0;color:rgba(255,239,179,0.6);">Columns</td><td style="padding:7px 0;color:var(--butter);">19 (SUBDIVISION, YEAR, 12 monthly, ANNUAL, 4 seasonal)</td></tr>
+        </table>
+        <div style="margin-top:20px;border-top:1px solid rgba(255,239,179,0.12);padding-top:16px;">
+          <h4 style="color:var(--butter);margin-bottom:10px;font-size:0.95rem;">District Normal Rainfall</h4>
+          <table style="font-size:0.85rem;width:100%;border-collapse:collapse;">
+            <tr><td style="padding:5px 0;color:rgba(255,239,179,0.6);width:40%;">File</td><td style="padding:5px 0;color:var(--butter);">district wise rainfall normal.csv</td></tr>
+            <tr><td style="padding:5px 0;color:rgba(255,239,179,0.6);">Rows</td><td style="padding:5px 0;color:var(--butter);">641 districts across India</td></tr>
+            <tr><td style="padding:5px 0;color:rgba(255,239,179,0.6);">Usage</td><td style="padding:5px 0;color:var(--butter);">Top-10 states bar chart (Analysis page)</td></tr>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="padding:28px;background:rgba(255,239,179,0.5);border:1.5px solid rgba(1,62,55,0.18);border-radius:var(--radius);">
+          <h4 style="margin-bottom:14px;">Why This Dataset?</h4>
+          <p style="font-size:0.95rem;margin-bottom:14px;opacity:0.85;">
+            Three clear reasons drove this choice over other rainfall datasets:
+          </p>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="flex-shrink:0;width:28px;height:28px;background:var(--green);color:var(--butter);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;">1</div>
+              <div><strong>Statistical Power:</strong> <span style="font-size:0.9rem;opacity:0.8;">4,090 records over 115 years provide large enough sample sizes for robust Bayesian computation, distribution fitting, and polynomial regression without overfitting.</span></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="flex-shrink:0;width:28px;height:28px;background:var(--green);color:var(--butter);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;">2</div>
+              <div><strong>Spatial Diversity:</strong> <span style="font-size:0.9rem;opacity:0.8;">36 meteorological subdivisions span Rajasthan desert (62 mm/yr) to Kerala coast (6,300+ mm/yr), enabling cross-region independence tests and distribution comparisons.</span></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="flex-shrink:0;width:28px;height:28px;background:var(--green);color:var(--butter);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;">3</div>
+              <div><strong>Official Authority:</strong> <span style="font-size:0.9rem;opacity:0.8;">IMD is India's nodal government agency for meteorology. Its records carry standardised instrument calibration and quality control absent from citizen or satellite-derived alternatives.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCHEMA TABLE -->
+<section class="section section--green">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,239,179,0.6);">Column Reference</span>
+    <h2 style="color:var(--butter);margin-bottom:32px;">Dataset Schema</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Type</th>
+            <th>Unit</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>SUBDIVISION</strong></td><td>string</td><td>none</td><td>IMD meteorological subdivision name (36 unique values)</td></tr>
+          <tr><td><strong>YEAR</strong></td><td>integer</td><td>none</td><td>Calendar year, 1901 to 2015</td></tr>
+          <tr><td><strong>JAN to DEC</strong></td><td>float</td><td>mm</td><td>Monthly cumulative rainfall for January through December</td></tr>
+          <tr><td><strong>ANNUAL</strong></td><td>float</td><td>mm</td><td>Total annual rainfall (sum of 12 monthly values)</td></tr>
+          <tr><td><strong>Jan-Feb</strong></td><td>float</td><td>mm</td><td>Winter season total (January + February)</td></tr>
+          <tr><td><strong>Mar-May</strong></td><td>float</td><td>mm</td><td>Pre-monsoon season total (March to May)</td></tr>
+          <tr><td><strong>Jun-Sep</strong></td><td>float</td><td>mm</td><td>Southwest Monsoon season total (June to September)</td></tr>
+          <tr><td><strong>Oct-Dec</strong></td><td>float</td><td>mm</td><td>Post-monsoon / retreating monsoon (October to December)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:16px;font-size:0.82rem;opacity:0.55;color:var(--butter);">
+      All rainfall values in millimetres (mm). Missing years for some subdivisions result in 4,090 usable records from a theoretical max of 4,140.
+    </p>
+  </div>
+</section>
+
+<!-- SUMMARY STATISTICS (horizontal bar matching reference image) -->
+<section class="section">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <div>
+        <span class="section-label">Descriptive Statistics · Annual Rainfall</span>
+        <h2>Summary Statistics (Annual Precipitation)</h2>
+      </div>
+      <span style="font-size:0.76rem;opacity:0.5;white-space:nowrap;">IMD Sub-divisional Dataset &middot; N = 4,090 records</span>
+    </div>
+
+    <div class="stats-bar" id="statsBar">
+      <!-- filled by JS -->
+    </div>
+
+    <p style="margin-top:28px;font-size:0.88rem;opacity:0.65;max-width:80ch;">
+      Annual rainfall is highly right-skewed (mean 1,411 mm vs median 1,121 mm), reflecting the large positive outliers in extremely wet subdivisions like the Andaman Islands and Kerala coast. The IQR of 840 mm confirms wide regional spread.
+    </p>
+  </div>
+</section>
+
+<!-- LIVE DATA TABLE -->
+<section class="section section--green">
+  <div class="container">
+    <span class="section-label" style="color:rgba(255,239,179,0.6);">Live Filter</span>
+    <h2 style="color:var(--butter);margin-bottom:8px;">Explore the Data</h2>
+    <p style="color:rgba(255,239,179,0.72);margin-bottom:28px;">Select a sub-division to filter the records table in real time.</p>
+
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
+      <div class="select-wrap">
+        <select id="subdivSelect" style="min-width:260px;background:rgba(255,239,179,0.15);color:var(--butter);border-color:rgba(255,239,179,0.3);">
+          <option value="">Loading subdivisions...</option>
+        </select>
+      </div>
+      <span id="rowCount" style="font-size:0.85rem;color:rgba(255,239,179,0.65);">...</span>
+    </div>
+
+    <div class="table-wrap" id="liveTableWrap">
+      <div class="data-table-scroll">
+        <table id="liveTable">
+          <thead>
+            <tr>
+              <th>Subdivision</th>
+              <th>Year</th>
+              <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th>
+              <th>May</th><th>Jun</th><th>Jul</th><th>Aug</th>
+              <th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+              <th>Annual</th>
+              <th>Jan-Feb</th><th>Mar-May</th><th>Jun-Sep</th><th>Oct-Dec</th>
+            </tr>
+          </thead>
+          <tbody id="liveTableBody">
+            <tr><td colspan="19" class="loading">Parsing CSV, please wait...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+  <a href="index.html" class="nav-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </a>
+  <a href="dataset.html" class="nav-link active" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    Dataset
+  </a>
+  <a href="analysis.html" class="nav-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Analysis
+  </a>
+</nav>
+
+<script>
+// Live statistics engine - computed from the parsed CSV, not hardcoded.
+// All numbers below are derived at runtime from allRows.
+const quantile = Stats.quantile;
+
+function computeAnnualStats(rows) {
+  const valid = rows.filter(r => typeof r.ANNUAL === 'number' && !isNaN(r.ANNUAL));
+  const arr = valid.map(r => r.ANNUAL);
+  const n = arr.length;
+  const mean = arr.reduce((a, b) => a + b, 0) / n;
+  const variance = arr.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1); // sample variance, matches pandas .var()
+  const std = Math.sqrt(variance);
+  const sorted = [...arr].sort((a, b) => a - b);
+  const minRow = valid.find(r => r.ANNUAL === sorted[0]);
+  const maxRow = valid.find(r => r.ANNUAL === sorted[n - 1]);
+  return {
+    count: n, mean, variance, std,
+    min: sorted[0], max: sorted[n - 1],
+    q25: quantile(sorted, 0.25), q50: quantile(sorted, 0.5), q75: quantile(sorted, 0.75),
+    minLabel: minRow ? `${minRow.SUBDIVISION}, ${minRow.YEAR}` : '',
+    maxLabel: maxRow ? `${maxRow.SUBDIVISION}, ${maxRow.YEAR}` : ''
+  };
+}
+
+function renderStatsBar(stats) {
+  const items = [
+    { label: 'MEAN E[X] (\u03bc\u0302)', val: stats.mean.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}), note: 'mm / year' },
+    { label: 'VARIANCE (s\u00b2)', val: stats.variance.toExponential(2), note: 'mm\u00b2, sample (n-1)' },
+    { label: 'STD DEV (s)', val: stats.std.toFixed(1), note: 'mm' },
+    { label: 'MINIMUM', val: stats.min.toFixed(1), note: stats.minLabel },
+    { label: '25% (Q\u2081)', val: stats.q25.toFixed(1), note: 'First Quartile' },
+    { label: '50% (MEDIAN)', val: stats.q50.toFixed(1), note: '50th Percentile' },
+    { label: '75% (Q\u2083)', val: stats.q75.toFixed(1), note: 'Third Quartile' },
+    { label: 'MAXIMUM', val: stats.max.toFixed(1), note: stats.maxLabel },
+  ];
+  document.getElementById('statsBar').innerHTML = items.map(it => `
+    <div class="stats-bar-item">
+      <span class="stats-bar-item__label">${it.label}</span>
+      <span class="stats-bar-item__val">${it.val}</span>
+      <span class="stats-bar-item__note">${it.note}</span>
+    </div>
+  `).join('');
+}
+
+let allRows = [];
+
+function buildTable(subdiv) {
+  const filtered = subdiv ? allRows.filter(r => r.SUBDIVISION === subdiv) : allRows.slice(0, 100);
+  document.getElementById('rowCount').textContent = `${filtered.length} row${filtered.length !== 1 ? 's' : ''} shown`;
+  const cols = ['SUBDIVISION','YEAR','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC','ANNUAL','Jan-Feb','Mar-May','Jun-Sep','Oct-Dec'];
+  const tbody = document.getElementById('liveTableBody');
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="19" class="loading">No records found.</td></tr>'; return; }
+  tbody.innerHTML = filtered.map(row =>
+    `<tr>${cols.map(c => `<td>${row[c] !== undefined && row[c] !== '' ? row[c] : '...'}</td>`).join('')}</tr>`
+  ).join('');
+}
+
+Papa.parse('rainfall in india 1901-2015.csv', {
+  download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+  complete: function(results) {
+    allRows = results.data;
+    const subdivisions = [...new Set(allRows.map(r => r.SUBDIVISION))].sort();
+    const sel = document.getElementById('subdivSelect');
+    sel.innerHTML = '<option value="">All (showing first 100)</option>' +
+      subdivisions.map(s => `<option value="${s}">${s}</option>`).join('');
+    buildTable('');
+    renderStatsBar(computeAnnualStats(allRows));
+  },
+  error: function(err) {
+    document.getElementById('liveTableBody').innerHTML =
+      `<tr><td colspan="19" style="padding:24px;color:#c00;text-align:center;">Error: ${err.message}. Open via a local web server.</td></tr>`;
+  }
+});
+
+document.getElementById('subdivSelect').addEventListener('change', function() { buildTable(this.value); });
+</script>
+</body>
+</html>
